@@ -120,14 +120,22 @@ Follow these best practices to ensure reliable, efficient, and secure integratio
   </Accordion>
   
   <Accordion title="Use the SDK">
-    The official SDK handles job polling automatically. Consider using it instead of manual polling:
+    The official SDK provides convenient methods for API requests and job status checking. You'll still need to implement polling yourself:
     
     ```typescript
     import { PlankProofly } from '@plank-proofly/api';
     
     const client = new PlankProofly({ apiKey: 'sk_...' });
-    // SDK handles polling automatically
-    const result = await client.profiles.search({ name: 'John Doe' });
+    const { jobId } = await client.profiles.search({ name: 'John Doe' });
+    
+    // Poll for results
+    while (true) {
+      const status = await client.jobs.retrieveStatus(jobId);
+      if (status.status === 'completed') {
+        return status.resultData;
+      }
+      await new Promise(resolve => setTimeout(resolve, 2000));
+    }
     ```
   </Accordion>
 </AccordionGroup>

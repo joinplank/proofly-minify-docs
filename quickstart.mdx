@@ -193,14 +193,29 @@ const client = new PlankProofly({
   apiKey: 'your-api-key-here' 
 });
 
-// Submit a profile search
-// The SDK handles job polling automatically
-const result = await client.profiles.search({
+// Submit a profile search (returns jobId)
+const { jobId } = await client.profiles.search({
   name: 'John Doe',
   location: 'New York, NY',
   birthYear: 1990
 });
 
+// Poll for results manually
+async function pollJob(jobId: string) {
+  while (true) {
+    const status = await client.jobs.retrieveStatus(jobId);
+    
+    if (status.status === 'completed') {
+      return status.resultData;
+    } else if (status.status === 'failed') {
+      throw new Error(status.errorMessage || 'Job failed');
+    }
+    
+    await new Promise(resolve => setTimeout(resolve, 2000));
+  }
+}
+
+const result = await pollJob(jobId);
 console.log('Results:', result);
 ```
 

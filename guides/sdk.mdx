@@ -3,7 +3,7 @@ title: "SDK Usage"
 description: "Use the official SDK for easier integration"
 ---
 
-The Proofly API provides an official SDK for Node.js and TypeScript applications. The SDK handles authentication, job polling, and error handling automatically.
+The Proofly API provides an official SDK for Node.js and TypeScript applications. The SDK handles authentication and provides convenient methods for making API requests. You'll need to implement job polling yourself for asynchronous operations.
 
 ## Installation
 
@@ -37,7 +37,7 @@ const client = new PlankProofly({
 
 ## Job Management
 
-The SDK automatically handles job polling for asynchronous operations. Simply call the method and wait for results:
+Most operations return a job ID that you need to poll manually. Use the `jobs.retrieveStatus()` method to check job status:
 
 ```typescript
 try {
@@ -47,6 +47,8 @@ try {
   
   if (status.status === 'completed') {
     console.log('Result:', status.resultData);
+  } else if (status.status === 'failed') {
+    console.error('Job failed:', status.errorMessage);
   }
 } catch (error) {
   console.error('Error fetching job:', error);
@@ -55,16 +57,33 @@ try {
 
 ## Profile Search
 
-Search for Facebook profiles with automatic job polling:
+Search for Facebook profiles. This returns a job ID that you need to poll:
 
 ```typescript
-// The SDK handles job creation and polling automatically
-const result = await client.profiles.search({
+// Submit the search request
+const { jobId } = await client.profiles.search({
   name: 'John Doe',
   location: 'New York, NY',
   birthYear: 1990
 });
 
+// Poll for results
+const pollJob = async (jobId: string) => {
+  while (true) {
+    const status = await client.jobs.retrieveStatus(jobId);
+    
+    if (status.status === 'completed') {
+      return status.resultData;
+    } else if (status.status === 'failed') {
+      throw new Error(status.errorMessage || 'Job failed');
+    }
+    
+    // Wait 2 seconds before polling again
+    await new Promise(resolve => setTimeout(resolve, 2000));
+  }
+};
+
+const result = await pollJob(jobId);
 console.log('Primary Match:', result.primaryMatch);
 console.log('Candidates:', result.candidates);
 ```
@@ -74,21 +93,27 @@ console.log('Candidates:', result.candidates);
 Check if profiles are friends:
 
 ```typescript
-const result = await client.facebook.checkFriends({
+// Submit the request
+const { jobId } = await client.facebook.checkFriends({
   targetFacebookId: '123456789',
   candidateIds: ['987654321', '111222333']
 });
 
+// Poll for results
+const result = await pollJob(jobId);
 console.log('Friends:', result.friends);
 ```
 
 Find mutual friends:
 
 ```typescript
-const result = await client.facebook.findMutualFriends({
+// Submit the request
+const { jobId } = await client.facebook.findMutualFriends({
   userIds: ['123456789', '987654321', '111222333']
 });
 
+// Poll for results
+const result = await pollJob(jobId);
 console.log('Mutual Friends:', result.mutualFriends);
 ```
 
@@ -97,11 +122,14 @@ console.log('Mutual Friends:', result.mutualFriends);
 Verify a photo matches a Facebook profile:
 
 ```typescript
-const result = await client.profiles.verifyPhoto({
+// Submit the request
+const { jobId } = await client.profiles.verifyPhoto({
   photoUrl: 'https://example.com/photo.jpg',
   profileUrl: 'https://facebook.com/john.doe'
 });
 
+// Poll for results
+const result = await pollJob(jobId);
 console.log('Confidence:', result.confidence);
 console.log('Match:', result.photoMatch);
 console.log('Justification:', result.justification);
@@ -171,54 +199,83 @@ const client = new PlankProofly({
 The SDK is written in TypeScript and provides full type definitions:
 
 ```typescript
-import { PlankProofly, ProfileSearchResult, JobStatus } from '@plank-proofly/api';
+import { PlankProofly, JobStatus } from '@plank-proofly/api';
 
 const client = new PlankProofly({ apiKey: 'sk_...' });
 
 // All methods are fully typed
-const result: ProfileSearchResult = await client.profiles.search({
-  name: 'John Doe'
-});
-```
-
-## Advanced Usage
-
-### Custom Polling Configuration
-
-Configure job polling behavior:
-
-```typescript
-const client = new PlankProofly({
-  apiKey: 'sk_your_api_key_here',
-  polling: {
-    interval: 2000, // Poll every 2 seconds
-    maxAttempts: 60, // Maximum polling attempts
-    timeout: 120000 // Total timeout in milliseconds
-  }
-});
-```
-
-### Manual Job Polling
-
-If you prefer to handle polling manually:
-
-```typescript
-// Submit job
-const { jobId } = await client.profiles.searchAsync({
+const { jobId } = await client.profiles.search({
   name: 'John Doe'
 });
 
-// Poll manually
-let status: JobStatus;
-do {
-  await new Promise(resolve => setTimeout(resolve, 2000));
-  status = await client.jobs.retrieveStatus(jobId);
-} while (status.status === 'queued' || status.status === 'processing');
+const status: JobStatus = await client.jobs.retrieveStatus(jobId);
+```
 
-if (status.status === 'completed') {
-  console.log('Results:', status.resultData);
+## Implementing Job Polling
+
+Since the SDK doesn't handle polling automatically, you need to implement it yourself. Here's a reusable polling function:
+
+```typescript
+interface PollOptions {
+  interval?: number; // Poll interval in milliseconds (default: 2000)
+  maxAttempts?: number; // Maximum polling attempts (default: 60)
+  timeout?: number; // Total timeout in milliseconds (default: 120000)
 }
+
+async function pollJob(
+  client: PlankProofly,
+  jobId: string,
+  options: PollOptions = {}
+): Promise<any> {
+  const {
+    interval = 2000,
+    maxAttempts = 60,
+    timeout = 120000
+  } = options;
+
+  const startTime = Date.now();
+
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    // Check timeout
+    if (Date.now() - startTime > timeout) {
+      throw new Error('Job polling timeout');
+    }
+
+    const status = await client.jobs.retrieveStatus(jobId);
+
+    if (status.status === 'completed') {
+      return status.resultData;
+    } else if (status.status === 'failed') {
+      throw new Error(status.errorMessage || 'Job failed');
+    }
+
+    // Wait before next poll
+    await new Promise(resolve => setTimeout(resolve, interval));
+  }
+
+  throw new Error('Max polling attempts reached');
+}
+
+// Usage example
+const { jobId } = await client.profiles.search({
+  name: 'John Doe'
+});
+
+const result = await pollJob(client, jobId, {
+  interval: 2000,
+  maxAttempts: 60,
+  timeout: 120000
+});
 ```
+
+### Polling Best Practices
+
+- **Poll Interval**: 2-5 seconds is recommended
+- **Timeout**: Most jobs complete within 30-60 seconds, but allow up to 2 minutes for complex operations
+- **Handle All Statuses**: Implement handling for `queued`, `waiting_for_browser`, `processing`, `completed`, and `failed`
+- **Error Handling**: Always handle job failures and timeouts gracefully
+
+See the [Best Practices guide](/guides/best-practices) for more detailed polling strategies.
 
 ## Package Information
 
