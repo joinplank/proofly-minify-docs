@@ -3,6 +3,7 @@ name: Sync docs from agent-profile-check
 on:
   repository_dispatch:
     types: [sync-docs]
+  workflow_dispatch: {}
 
 jobs:
   sync:
