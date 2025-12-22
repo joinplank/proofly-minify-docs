@@ -119,17 +119,7 @@ Follow these best practices to ensure reliable, efficient, and secure integratio
     - `failed` - Handle error
   </Accordion>
   
-  <Accordion title="Use the SDK">
-    The official SDK handles job polling automatically. Consider using it instead of manual polling:
-    
-    ```typescript
-    import { PlankProofly } from '@plank-proofly/api';
-    
-    const client = new PlankProofly({ apiKey: 'sk_...' });
-    // SDK handles polling automatically
-    const result = await client.profiles.search({ name: 'John Doe' });
-    ```
-  </Accordion>
+
 </AccordionGroup>
 
 ## Rate Limiting
@@ -395,21 +385,7 @@ Follow these best practices to ensure reliable, efficient, and secure integratio
     Use separate test API keys for development and testing to avoid affecting production metrics.
   </Accordion>
   
-  <Accordion title="Mock API Responses">
-    Mock API responses in unit tests to avoid making real API calls:
-    
-    ```typescript
-    jest.mock('@plank-proofly/api', () => ({
-      PlankProofly: jest.fn().mockImplementation(() => ({
-        profiles: {
-          search: jest.fn().mockResolvedValue({
-            primaryMatch: { facebookId: '123', confidence: 0.9 }
-          })
-        }
-      }))
-    }));
-    ```
-  </Accordion>
+
   
   <Accordion title="Test Error Scenarios">
     Test error handling for all error scenarios:
