@@ -1,0 +1,200 @@
+---
+title: "Check Facebook Friends"
+description: "Verify which profiles from a list are friends with a target Facebook profile"
+api: "POST /api/check-facebook-friends"
+---
+
+Verify which profiles from a provided list are friends with a target Facebook profile. This endpoint is useful for identity verification and social graph analysis.
+
+<Endpoint method="POST" url="/api/check-facebook-friends" />
+
+<ParamField body="targetFacebookId" type="string" required>
+  The Facebook profile ID of the target user to check friendships against.
+</ParamField>
+
+<ParamField body="candidateIds" type="array" required>
+  Array of Facebook profile IDs to check. Must contain at least one ID.
+</ParamField>
+
+## Request Example
+
+<CodeGroup>
+
+```bash cURL
+curl -X POST https://api.proofly.joinplank.com/api/check-facebook-friends \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: sk_your_api_key_here" \
+  -d '{
+    "targetFacebookId": "123456789",
+    "candidateIds": [
+      "987654321",
+      "111222333",
+      "444555666"
+    ]
+  }'
+```
+
+```javascript JavaScript
+const response = await fetch('https://api.proofly.joinplank.com/api/check-facebook-friends', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    'X-API-Key': 'sk_your_api_key_here'
+  },
+  body: JSON.stringify({
+    targetFacebookId: '123456789',
+    candidateIds: [
+      '987654321',
+      '111222333',
+      '444555666'
+    ]
+  })
+});
+
+const { jobId } = await response.json();
+```
+
+```typescript TypeScript
+interface CheckFriendsRequest {
+  targetFacebookId: string;
+  candidateIds: string[];
+}
+
+const response = await fetch('https://api.proofly.joinplank.com/api/check-facebook-friends', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    'X-API-Key': 'sk_your_api_key_here'
+  },
+  body: JSON.stringify({
+    targetFacebookId: '123456789',
+    candidateIds: [
+      '987654321',
+      '111222333',
+      '444555666'
+    ]
+  } as CheckFriendsRequest)
+});
+
+const { jobId } = await response.json() as { jobId: string };
+```
+
+</CodeGroup>
+
+## Response
+
+This endpoint processes requests asynchronously and returns a job ID. Poll the [Jobs endpoint](/api-reference/jobs) to check status and retrieve results.
+
+### 202 Accepted
+
+```json
+{
+  "jobId": "550e8400-e29b-41d4-a716-446655440000"
+}
+```
+
+### Job Result (when completed)
+
+When the job status is `completed`, the `resultData` contains:
+
+```json
+{
+  "friends": [
+    "987654321",
+    "111222333"
+  ]
+}
+```
+
+The `friends` array contains the Facebook IDs from `candidateIds` that are confirmed friends with the `targetFacebookId`.
+
+## Response Fields
+
+<ParamField response="friends" type="array">
+  Array of Facebook profile IDs from the `candidateIds` that are confirmed friends with the `targetFacebookId`.
+</ParamField>
+
+## Authentication
+
+This endpoint requires API key authentication via the `X-API-Key` header.
+
+## Error Responses
+
+### 400 Bad Request
+
+Invalid request parameters.
+
+```json
+{
+  "error": "Bad Request",
+  "message": "At least one candidate ID is required"
+}
+```
+
+### 401 Unauthorized
+
+Missing or invalid API key.
+
+```json
+{
+  "error": "Unauthorized",
+  "message": "Invalid API key"
+}
+```
+
+### 500 Internal Server Error
+
+Server error occurred.
+
+```json
+{
+  "error": "Internal Server Error",
+  "message": "An unexpected error occurred"
+}
+```
+
+### 502 Bad Gateway
+
+Service temporarily unavailable.
+
+```json
+{
+  "error": "Bad Gateway",
+  "message": "Service temporarily unavailable"
+}
+```
+
+## Use Cases
+
+<AccordionGroup>
+  <Accordion title="Identity Verification">
+    Verify that a user's claimed identity matches their social connections by checking if they're friends with known associates.
+  </Accordion>
+  
+  <Accordion title="Social Graph Analysis">
+    Analyze connections between a target profile and a list of candidate profiles to understand relationship networks.
+  </Accordion>
+  
+  <Accordion title="Fraud Detection">
+    Detect suspicious accounts by checking if they have connections with verified profiles.
+  </Accordion>
+  
+  <Accordion title="Connection Verification">
+    Verify if specific individuals are connected on Facebook for background checks or verification purposes.
+  </Accordion>
+</AccordionGroup>
+
+## Notes
+
+- This endpoint processes requests asynchronously and returns job IDs
+- Poll the [Jobs endpoint](/api-reference/jobs) to check status and retrieve results
+- Results depend on the privacy settings of the Facebook profiles being checked
+- Private friend lists may not be accessible, which can affect results
+- Only public friendships are detectable; private friendships may not appear in results
+
+## Related Endpoints
+
+- [Jobs](/api-reference/jobs) - Check job status and retrieve results
+- [Profile Search](/api-reference/profile-search) - Find Facebook profiles before checking friendships
+- [Find Mutual Friends](/api-reference/find-mutual-friends) - Discover mutual connections between multiple profiles
+

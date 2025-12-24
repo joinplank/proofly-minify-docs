@@ -1,0 +1,440 @@
+---
+title: "Connection Graph"
+description: "Build a connection graph by searching for multiple Facebook profiles and retrieving their friends lists"
+api: "POST /api/profiles/connection-graph"
+---
+
+Build a connection graph by searching for multiple Facebook profiles using profile search criteria and retrieving their friends lists. Returns a graph structure with nodes (profiles) and edges (connections) showing relationships between all profiles.
+
+<Endpoint method="POST" url="/api/profiles/connection-graph" />
+
+<ParamField body="profiles" type="array" required>
+  Array of profile search requests to build the connection graph. Each profile uses the same search criteria structure as the [Profile Search endpoint](/api-reference/profile-search). Minimum 1 profile, maximum 100 profiles allowed.
+</ParamField>
+
+<ParamField body="profiles[].name" type="string" required>
+  The name of the person to search for. Minimum 1 character.
+</ParamField>
+
+<ParamField body="profiles[].email" type="string">
+  Email address associated with the profile (optional).
+</ParamField>
+
+<ParamField body="profiles[].birthYear" type="number">
+  Birth year (e.g., 1990). Must be between 1900 and current year.
+</ParamField>
+
+<ParamField body="profiles[].dateOfBirth" type="string">
+  Full date of birth in ISO format (YYYY-MM-DD), e.g., "1990-05-15".
+</ParamField>
+
+<ParamField body="profiles[].location" type="string">
+  Location to search (city, state, country, etc.). Minimum 2 characters. If not provided, uses global location filter if set.
+</ParamField>
+
+<ParamField body="profiles[].subCategory" type="string">
+  Location category: `"hometown"` or `"current"`. If not provided, uses global subCategory filter if set.
+</ParamField>
+
+<ParamField body="profiles[].photoUrl" type="string">
+  URL of a photo to compare against profile photos for facial recognition matching.
+</ParamField>
+
+<ParamField body="profiles[].knownAssociates" type="array">
+  Array of Facebook profile URLs or IDs of known associates. Maximum 20 items.
+</ParamField>
+
+<ParamField body="profiles[].additionalInstructions" type="string">
+  Additional instructions to append to the AI prompt for custom search criteria.
+</ParamField>
+
+<ParamField body="globalFilters" type="object">
+  Optional global filters to apply to all profile searches. Profile-specific filters override global ones.
+</ParamField>
+
+<ParamField body="globalFilters.location" type="string">
+  Global location filter to apply to all profile searches (if profile doesn't have its own location).
+</ParamField>
+
+<ParamField body="globalFilters.subCategory" type="string">
+  Global subCategory filter (`"hometown"` or `"current"`) to apply to all profile searches (if profile doesn't have its own subCategory).
+</ParamField>
+
+## Request Example
+
+<CodeGroup>
+
+```bash cURL
+curl -X POST https://api.proofly.joinplank.com/api/profiles/connection-graph \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: sk_your_api_key_here" \
+  -d '{
+    "profiles": [
+      {
+        "name": "John Doe",
+        "email": "john.doe@example.com",
+        "location": "New York, NY",
+        "subCategory": "current"
+      },
+      {
+        "name": "Jane Smith",
+        "birthYear": 1990,
+        "location": "Los Angeles, CA"
+      }
+    ],
+    "globalFilters": {
+      "location": "United States",
+      "subCategory": "current"
+    }
+  }'
+```
+
+```javascript JavaScript
+const response = await fetch('https://api.proofly.joinplank.com/api/profiles/connection-graph', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    'X-API-Key': 'sk_your_api_key_here'
+  },
+  body: JSON.stringify({
+    profiles: [
+      {
+        name: 'John Doe',
+        email: 'john.doe@example.com',
+        location: 'New York, NY',
+        subCategory: 'current'
+      },
+      {
+        name: 'Jane Smith',
+        birthYear: 1990,
+        location: 'Los Angeles, CA'
+      }
+    ],
+    globalFilters: {
+      location: 'United States',
+      subCategory: 'current'
+    }
+  })
+});
+
+const { jobId } = await response.json();
+```
+
+```typescript TypeScript
+interface ProfileSearchRequest {
+  name: string;
+  email?: string;
+  birthYear?: number;
+  dateOfBirth?: string;
+  location?: string;
+  subCategory?: 'hometown' | 'current';
+  photoUrl?: string;
+  knownAssociates?: string[];
+  additionalInstructions?: string;
+}
+
+interface GlobalFilters {
+  location?: string;
+  subCategory?: 'hometown' | 'current';
+}
+
+interface ConnectionGraphRequest {
+  profiles: ProfileSearchRequest[];
+  globalFilters?: GlobalFilters;
+}
+
+const response = await fetch('https://api.proofly.joinplank.com/api/profiles/connection-graph', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    'X-API-Key': 'sk_your_api_key_here'
+  },
+  body: JSON.stringify({
+    profiles: [
+      {
+        name: 'John Doe',
+        email: 'john.doe@example.com',
+        location: 'New York, NY',
+        subCategory: 'current'
+      },
+      {
+        name: 'Jane Smith',
+        birthYear: 1990,
+        location: 'Los Angeles, CA'
+      }
+    ],
+    globalFilters: {
+      location: 'United States',
+      subCategory: 'current'
+    }
+  } as ConnectionGraphRequest)
+});
+
+const { jobId } = await response.json() as { jobId: string };
+```
+
+</CodeGroup>
+
+## Response
+
+This endpoint processes requests asynchronously and returns a job ID. Poll the [Jobs endpoint](/api-reference/jobs) to check status and retrieve results.
+
+### 202 Accepted
+
+```json
+{
+  "jobId": "550e8400-e29b-41d4-a716-446655440000"
+}
+```
+
+### Job Result (when completed)
+
+When the job status is `completed`, the `resultData` contains:
+
+```json
+{
+  "nodes": [
+    {
+      "userId": "123456789",
+      "name": "John Doe",
+      "profileUrl": "https://facebook.com/john.doe",
+      "location": "New York, NY",
+      "photoUrl": "https://facebook.com/john.doe/photo.jpg"
+    },
+    {
+      "userId": "987654321",
+      "name": "Jane Smith",
+      "profileUrl": "https://facebook.com/jane.smith",
+      "location": "Los Angeles, CA",
+      "photoUrl": "https://facebook.com/jane.smith/photo.jpg"
+    },
+    {
+      "userId": "555666777",
+      "name": "Bob Johnson",
+      "profileUrl": "https://facebook.com/bob.johnson",
+      "location": "Chicago, IL"
+    }
+  ],
+  "edges": [
+    {
+      "fromId": "123456789",
+      "toId": "555666777",
+      "fromUrl": "https://facebook.com/john.doe",
+      "toUrl": "https://facebook.com/bob.johnson",
+      "fromName": "John Doe",
+      "toName": "Bob Johnson",
+      "relationship": "friend"
+    },
+    {
+      "fromId": "987654321",
+      "toId": "555666777",
+      "fromUrl": "https://facebook.com/jane.smith",
+      "toUrl": "https://facebook.com/bob.johnson",
+      "fromName": "Jane Smith",
+      "toName": "Bob Johnson",
+      "relationship": "friend_college"
+    }
+  ]
+}
+```
+
+The response contains a graph structure with:
+- **nodes**: All profiles in the graph (searched profiles and their connections)
+- **edges**: All connections between profiles with relationship information
+
+## Response Fields
+
+### Nodes
+
+<ParamField response="nodes" type="array">
+  Array of all profiles in the connection graph, including the searched profiles and all their connections.
+</ParamField>
+
+<ParamField response="nodes[].userId" type="string">
+  Facebook profile ID of the user.
+</ParamField>
+
+<ParamField response="nodes[].name" type="string">
+  Full name of the profile.
+</ParamField>
+
+<ParamField response="nodes[].profileUrl" type="string">
+  URL to the Facebook profile.
+</ParamField>
+
+<ParamField response="nodes[].location" type="string">
+  Location of the profile, if available.
+</ParamField>
+
+<ParamField response="nodes[].photoUrl" type="string">
+  URL to the profile photo, if available.
+</ParamField>
+
+### Edges
+
+<ParamField response="edges" type="array">
+  Array of all connections between profiles in the graph, showing relationships.
+</ParamField>
+
+<ParamField response="edges[].fromId" type="string">
+  Source profile Facebook ID.
+</ParamField>
+
+<ParamField response="edges[].toId" type="string">
+  Target profile Facebook ID.
+</ParamField>
+
+<ParamField response="edges[].fromUrl" type="string">
+  URL to the source profile.
+</ParamField>
+
+<ParamField response="edges[].toUrl" type="string">
+  URL to the target profile.
+</ParamField>
+
+<ParamField response="edges[].fromName" type="string">
+  Name of the source profile, if available. May be null.
+</ParamField>
+
+<ParamField response="edges[].toName" type="string">
+  Name of the target profile, if available. May be null.
+</ParamField>
+
+<ParamField response="edges[].relationship" type="string">
+  Type of relationship between profiles. Possible values:
+  - `"following"` - Following relationship
+  - `"follower"` - Follower relationship
+  - `"commented"` - Commented on posts
+  - `"liked"` - Liked posts
+  - `"friend"` - Friend relationship
+  - `"friend_college"` - College friend
+  - `"friend_high_school"` - High school friend
+  - `"friend_current_city"` - Friend from current city
+  - `"friend_hometown"` - Friend from hometown
+  - `"friend_work"` - Work friend
+</ParamField>
+
+## Relationship Types
+
+The `relationship` field in edges indicates the type of connection:
+
+- **`following`** - One profile follows another
+- **`follower`** - One profile is followed by another
+- **`commented`** - One profile has commented on the other's posts
+- **`liked`** - One profile has liked the other's posts
+- **`friend`** - General friend relationship
+- **`friend_college`** - Friends from college
+- **`friend_high_school`** - Friends from high school
+- **`friend_current_city`** - Friends from current city
+- **`friend_hometown`** - Friends from hometown
+- **`friend_work`** - Friends from work
+
+## Authentication
+
+This endpoint requires API key authentication via the `X-API-Key` header.
+
+## Error Responses
+
+### 400 Bad Request
+
+Invalid request parameters.
+
+```json
+{
+  "error": "Bad Request",
+  "message": "At least one profile is required"
+}
+```
+
+### 401 Unauthorized
+
+Missing or invalid API key.
+
+```json
+{
+  "error": "Unauthorized",
+  "message": "Invalid API key"
+}
+```
+
+### 500 Internal Server Error
+
+Server error occurred.
+
+```json
+{
+  "error": "Internal Server Error",
+  "message": "An unexpected error occurred"
+}
+```
+
+### 502 Bad Gateway
+
+Service temporarily unavailable.
+
+```json
+{
+  "error": "Bad Gateway",
+  "message": "Service temporarily unavailable"
+}
+```
+
+## Use Cases
+
+<AccordionGroup>
+  <Accordion title="Social Network Analysis">
+    Analyze the connections and relationships between multiple profiles to understand social networks and communities.
+  </Accordion>
+  
+  <Accordion title="Network Mapping">
+    Map out the complete connection graph between profiles and their mutual connections to visualize relationship networks.
+  </Accordion>
+  
+  <Accordion title="Community Detection">
+    Identify communities and clusters of connected profiles based on relationship types and connections.
+  </Accordion>
+  
+  <Accordion title="Relationship Discovery">
+    Discover connections between profiles, including mutual friends, work connections, and other relationship types.
+  </Accordion>
+</AccordionGroup>
+
+## Notes
+
+- This endpoint processes requests asynchronously and returns job IDs
+- Poll the [Jobs endpoint](/api-reference/jobs) to check status and retrieve results
+- Can process up to 100 profiles per request
+- Each profile search follows the same logic as the [Profile Search endpoint](/api-reference/profile-search)
+- Global filters are applied to profiles that don't have their own location/subCategory specified
+- Profile-specific filters override global filters
+- Results depend on the privacy settings of the Facebook profiles being analyzed
+- Private friend lists may not be fully accessible, which can affect results
+- The graph includes both the searched profiles and all their discovered connections
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Limit Profile Count">
+    Keep the number of profiles reasonable (10-50) for faster processing. The endpoint accepts up to 100, but processing time increases with more profiles.
+  </Accordion>
+  
+  <Accordion title="Use Global Filters">
+    When all profiles share the same location or category, use global filters to avoid repetition in each profile request.
+  </Accordion>
+  
+  <Accordion title="Handle Large Graphs">
+    The resulting graph can be large depending on the number of connections. Plan your data processing accordingly.
+  </Accordion>
+  
+  <Accordion title="Relationship Types">
+    Different relationship types indicate different connection strengths. Consider filtering or weighting edges based on relationship type for analysis.
+  </Accordion>
+</AccordionGroup>
+
+## Related Endpoints
+
+- [Jobs](/api-reference/jobs) - Check job status and retrieve results
+- [Profile Search](/api-reference/profile-search) - Search for individual profiles (used as input for each profile in the graph)
+- [Get Facebook Friends](/api-reference/get-facebook-friends) - Get friends list for a single profile
+- [Find Mutual Friends](/api-reference/find-mutual-friends) - Find mutual connections between profiles
+

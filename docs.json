@@ -41,13 +41,25 @@
             ]
           },
           {
-            "group": "Endpoints",
+            "group": "Facebook Endpoints",
             "pages": [
               "api-reference/profile-search",
-              "api-reference/facebook-friend-check",
+              "api-reference/get-facebook-friends",
+              "api-reference/check-facebook-friends",
+              "api-reference/find-mutual-friends",
+              "api-reference/connection-graph",
+              "api-reference/profile-interactions",
+              "api-reference/filtered-profile-interactions",
               "api-reference/profile-photo-verification",
-              "api-reference/fuzzy-search",
               "api-reference/jobs"
+            ]
+          },
+          {
+            "group": "Nursys Endpoints",
+            "pages": [
+              "api-reference/nursys-license-verification-by-name",
+              "api-reference/nursys-license-verification-by-license-number",
+              "api-reference/nursys-license-verification-by-name-all-types"
             ]
           }
         ]

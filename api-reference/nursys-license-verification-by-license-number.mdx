@@ -1,0 +1,218 @@
+---
+title: "Nursys License Verification by License Number"
+description: "Verify nursing licenses on the Nursys website by license number"
+api: "POST /api/nursys/license-verification/by-license-number"
+---
+
+Search for nursing licenses by license number, license type, and state. This endpoint searches the Nursys database for individuals matching the provided license number, license type, and state.
+
+<Endpoint method="POST" url="/api/nursys/license-verification/by-license-number" />
+
+<ParamField body="licenseNumber" type="string" required>
+  The license number to search for.
+</ParamField>
+
+<ParamField body="licenseType" type="string" required>
+  The type of license. Must be one of: `PN`, `RN`, `APRN-CNP`, `APRN-CRNA`, `APRN-CNS`, `APRN-CNM`.
+</ParamField>
+
+<ParamField body="state" type="string" required>
+  The state where the license is issued. Can be a full state name (e.g., "California") or abbreviation (e.g., "CA"). The API will normalize the state name automatically.
+</ParamField>
+
+## Request Example
+
+<CodeGroup>
+
+```bash cURL
+curl -X POST https://api.proofly.joinplank.com/api/nursys/license-verification/by-license-number \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: sk_your_api_key_here" \
+  -d '{
+    "licenseNumber": "12345678",
+    "licenseType": "RN",
+    "state": "CA"
+  }'
+```
+
+```javascript JavaScript
+const response = await fetch('https://api.proofly.joinplank.com/api/nursys/license-verification/by-license-number', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    'X-API-Key': 'sk_your_api_key_here'
+  },
+  body: JSON.stringify({
+    licenseNumber: '12345678',
+    licenseType: 'RN',
+    state: 'CA'
+  })
+});
+
+const { jobId } = await response.json();
+```
+
+```typescript TypeScript
+interface VerifyByLicenseNumberRequest {
+  licenseNumber: string;
+  licenseType: 'PN' | 'RN' | 'APRN-CNP' | 'APRN-CRNA' | 'APRN-CNS' | 'APRN-CNM';
+  state: string;
+}
+
+const response = await fetch('https://api.proofly.joinplank.com/api/nursys/license-verification/by-license-number', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    'X-API-Key': 'sk_your_api_key_here'
+  },
+  body: JSON.stringify({
+    licenseNumber: '12345678',
+    licenseType: 'RN',
+    state: 'CA'
+  } as VerifyByLicenseNumberRequest)
+});
+
+const { jobId } = await response.json() as { jobId: string };
+```
+
+</CodeGroup>
+
+## Response
+
+This endpoint processes requests asynchronously and returns a job ID. Poll the [Jobs endpoint](/api-reference/jobs) to check status and retrieve results.
+
+### 202 Accepted
+
+```json
+{
+  "jobId": "550e8400-e29b-41d4-a716-446655440000"
+}
+```
+
+### Job Result (when completed)
+
+When the job status is `completed`, the `resultData` contains:
+
+```json
+{
+  "individuals": [
+    {
+      "lastName": "Smith",
+      "firstName": "Jane",
+      "licenseType": "RN",
+      "state": "California",
+      "licenseNumber": "12345678"
+    }
+  ]
+}
+```
+
+The `individuals` array contains all matching nursing license records found in the Nursys database.
+
+## Response Fields
+
+<ParamField response="individuals" type="array">
+  Array of matching nursing license records found in the Nursys database.
+</ParamField>
+
+<ParamField response="individuals[].lastName" type="string">
+  The last name of the licensed nurse.
+</ParamField>
+
+<ParamField response="individuals[].firstName" type="string">
+  The first name of the licensed nurse.
+</ParamField>
+
+<ParamField response="individuals[].licenseType" type="string">
+  The type of nursing license. One of: `PN`, `RN`, `APRN-CNP`, `APRN-CRNA`, `APRN-CNS`, `APRN-CNM`.
+</ParamField>
+
+<ParamField response="individuals[].state" type="string">
+  The state where the license is issued.
+</ParamField>
+
+<ParamField response="individuals[].licenseNumber" type="string">
+  The license number assigned to the nurse.
+</ParamField>
+
+## License Types
+
+The following license types are supported:
+
+- **PN** - Practical Nurse
+- **RN** - Registered Nurse
+- **APRN-CNP** - Advanced Practice Registered Nurse - Certified Nurse Practitioner
+- **APRN-CRNA** - Advanced Practice Registered Nurse - Certified Registered Nurse Anesthetist
+- **APRN-CNS** - Advanced Practice Registered Nurse - Clinical Nurse Specialist
+- **APRN-CNM** - Advanced Practice Registered Nurse - Certified Nurse Midwife
+
+## Authentication
+
+This endpoint requires API key authentication via the `X-API-Key` header.
+
+## Error Responses
+
+### 400 Bad Request
+
+Invalid request parameters.
+
+```json
+{
+  "error": "Bad Request",
+  "message": "License number is required"
+}
+```
+
+### 401 Unauthorized
+
+Missing or invalid API key.
+
+```json
+{
+  "error": "Unauthorized",
+  "message": "Invalid API key"
+}
+```
+
+### 500 Internal Server Error
+
+Server error occurred.
+
+```json
+{
+  "error": "Internal Server Error",
+  "message": "An unexpected error occurred"
+}
+```
+
+## Notes
+
+- This endpoint processes requests asynchronously and returns job IDs
+- Poll the [Jobs endpoint](/api-reference/jobs) to check status and retrieve results
+- State names are automatically normalized (e.g., "CA" becomes "California")
+- The Nursys website may require CAPTCHA solving, which is handled automatically
+- Search results depend on the data available in the Nursys database
+- Empty `individuals` arrays indicate no matching licenses were found
+
+## Use Cases
+
+<AccordionGroup>
+  <Accordion title="License Verification">
+    Verify that a specific license number is valid and active in the Nursys database.
+  </Accordion>
+  
+  <Accordion title="Credentialing">
+    Verify nursing credentials during the hiring or credentialing process for healthcare facilities.
+  </Accordion>
+  
+  <Accordion title="Compliance Checking">
+    Ensure compliance with licensing requirements by verifying current license status using license numbers.
+  </Accordion>
+</AccordionGroup>
+
+## Related Endpoints
+
+- [Jobs](/api-reference/jobs) - Check job status and retrieve results
+- [Nursys License Verification by Name](/api-reference/nursys-license-verification-by-name) - Verify by name
+- [Nursys License Verification by Name (All Types)](/api-reference/nursys-license-verification-by-name-all-types) - Search across all license types
+

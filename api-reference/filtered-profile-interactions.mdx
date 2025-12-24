@@ -1,0 +1,333 @@
+---
+title: "Filtered Profile Interactions"
+description: "Collect interactions from a profile filtered by specific Facebook account IDs or names"
+api: "POST /api/filtered-profile-interactions"
+---
+
+Collect interactions (likes/comments) from a target profile, filtered to only include interactions from specified Facebook account IDs or names (case-insensitive). Each interaction includes the post URL. This is useful for finding specific interactions between known accounts.
+
+<Endpoint method="POST" url="/api/filtered-profile-interactions" />
+
+<ParamField body="profileId" type="string">
+  Facebook profile ID (numeric or username). Either `profileId` or `profileUrl` is required, but not both.
+</ParamField>
+
+<ParamField body="profileUrl" type="string">
+  Full Facebook profile URL (e.g., "https://facebook.com/john.doe"). Either `profileId` or `profileUrl` is required, but not both.
+</ParamField>
+
+<ParamField body="fbAccountIds" type="array">
+  Array of Facebook account IDs to filter interactions by. At least one of `fbAccountIds` or `fbAccountNames` must be provided.
+</ParamField>
+
+<ParamField body="fbAccountNames" type="array">
+  Array of Facebook account names to filter interactions by (case-insensitive). At least one of `fbAccountIds` or `fbAccountNames` must be provided.
+</ParamField>
+
+<ParamField body="postLimit" type="number">
+  Maximum number of posts to analyze for interactions. Must be between 1 and 20. Defaults to 5 if not specified.
+</ParamField>
+
+## Request Example
+
+<CodeGroup>
+
+```bash cURL
+curl -X POST https://api.proofly.joinplank.com/api/filtered-profile-interactions \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: sk_your_api_key_here" \
+  -d '{
+    "profileUrl": "https://facebook.com/john.doe",
+    "fbAccountIds": ["987654321", "555666777"],
+    "fbAccountNames": ["Jane Smith"],
+    "postLimit": 10
+  }'
+```
+
+```javascript JavaScript
+const response = await fetch('https://api.proofly.joinplank.com/api/filtered-profile-interactions', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    'X-API-Key': 'sk_your_api_key_here'
+  },
+  body: JSON.stringify({
+    profileUrl: 'https://facebook.com/john.doe',
+    fbAccountIds: ['987654321', '555666777'],
+    fbAccountNames: ['Jane Smith'],
+    postLimit: 10
+  })
+});
+
+const { jobId } = await response.json();
+```
+
+```typescript TypeScript
+interface FilteredProfileInteractionsRequest {
+  profileId?: string;
+  profileUrl?: string;
+  fbAccountIds?: string[];
+  fbAccountNames?: string[];
+  postLimit?: number;
+}
+
+const response = await fetch('https://api.proofly.joinplank.com/api/filtered-profile-interactions', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    'X-API-Key': 'sk_your_api_key_here'
+  },
+  body: JSON.stringify({
+    profileUrl: 'https://facebook.com/john.doe',
+    fbAccountIds: ['987654321', '555666777'],
+    fbAccountNames: ['Jane Smith'],
+    postLimit: 10
+  } as FilteredProfileInteractionsRequest)
+});
+
+const { jobId } = await response.json() as { jobId: string };
+```
+
+</CodeGroup>
+
+## Response
+
+This endpoint processes requests asynchronously and returns a job ID. Poll the [Jobs endpoint](/api-reference/jobs) to check status and retrieve results.
+
+### 202 Accepted
+
+```json
+{
+  "jobId": "550e8400-e29b-41d4-a716-446655440000"
+}
+```
+
+### Job Result (when completed)
+
+When the job status is `completed`, the `resultData` contains:
+
+```json
+{
+  "profile": {
+    "id": "123456789",
+    "url": "https://facebook.com/john.doe",
+    "name": "John Doe",
+    "pictureUrl": "https://facebook.com/john.doe/picture.jpg"
+  },
+  "interactions": [
+    {
+      "actorId": "987654321",
+      "name": "Jane Smith",
+      "profileUrl": "https://facebook.com/jane.smith",
+      "interactionType": "like",
+      "postUrl": "https://facebook.com/john.doe/posts/post123",
+      "postId": "post123",
+      "createdAt": "2024-01-15T10:30:00Z"
+    },
+    {
+      "actorId": "987654321",
+      "name": "Jane Smith",
+      "profileUrl": "https://facebook.com/jane.smith",
+      "interactionType": "comment",
+      "postUrl": "https://facebook.com/john.doe/posts/post123",
+      "postId": "post123",
+      "commentText": "Great post!",
+      "createdAt": "2024-01-15T11:00:00Z"
+    },
+    {
+      "actorId": "555666777",
+      "name": "Bob Johnson",
+      "profileUrl": "https://facebook.com/bob.johnson",
+      "interactionType": "like",
+      "postUrl": "https://facebook.com/john.doe/posts/post456",
+      "postId": "post456",
+      "createdAt": "2024-01-16T14:20:00Z"
+    }
+  ]
+}
+```
+
+The response contains only interactions from the specified Facebook account IDs or names.
+
+## Response Fields
+
+### Profile
+
+<ParamField response="profile" type="object">
+  Metadata about the target profile.
+</ParamField>
+
+<ParamField response="profile.id" type="string">
+  Facebook profile ID.
+</ParamField>
+
+<ParamField response="profile.url" type="string">
+  URL to the Facebook profile.
+</ParamField>
+
+<ParamField response="profile.name" type="string">
+  Name of the profile, if available.
+</ParamField>
+
+<ParamField response="profile.pictureUrl" type="string">
+  URL to the profile picture, if available.
+</ParamField>
+
+### Interactions
+
+<ParamField response="interactions" type="array">
+  Array of filtered interactions matching the specified account IDs or names.
+</ParamField>
+
+<ParamField response="interactions[].actorId" type="string">
+  Facebook ID of the account that performed the interaction.
+</ParamField>
+
+<ParamField response="interactions[].name" type="string">
+  Name of the account that performed the interaction, if available.
+</ParamField>
+
+<ParamField response="interactions[].profileUrl" type="string">
+  URL to the profile of the account that performed the interaction.
+</ParamField>
+
+<ParamField response="interactions[].interactionType" type="string">
+  Type of interaction: `"like"` or `"comment"`.
+</ParamField>
+
+<ParamField response="interactions[].postUrl" type="string">
+  URL to the post where the interaction occurred. Always included.
+</ParamField>
+
+<ParamField response="interactions[].postId" type="string">
+  Unique identifier for the post, if available.
+</ParamField>
+
+<ParamField response="interactions[].commentText" type="string">
+  Text of the comment, if the interaction type is `"comment"`.
+</ParamField>
+
+<ParamField response="interactions[].createdAt" type="string">
+  ISO timestamp when the interaction occurred, if available.
+</ParamField>
+
+## Interaction Types
+
+- **`like`** - The account liked a post
+- **`comment`** - The account commented on a post (includes `commentText`)
+
+## Authentication
+
+This endpoint requires API key authentication via the `X-API-Key` header.
+
+## Error Responses
+
+### 400 Bad Request
+
+Invalid request parameters.
+
+```json
+{
+  "error": "Bad Request",
+  "message": "At least one of fbAccountIds or fbAccountNames is required"
+}
+```
+
+```json
+{
+  "error": "Bad Request",
+  "message": "Provide either profileId or profileUrl, but not both"
+}
+```
+
+### 401 Unauthorized
+
+Missing or invalid API key.
+
+```json
+{
+  "error": "Unauthorized",
+  "message": "Invalid API key"
+}
+```
+
+### 500 Internal Server Error
+
+Server error occurred.
+
+```json
+{
+  "error": "Internal Server Error",
+  "message": "An unexpected error occurred"
+}
+```
+
+### 502 Bad Gateway
+
+Service temporarily unavailable.
+
+```json
+{
+  "error": "Bad Gateway",
+  "message": "Service temporarily unavailable"
+}
+```
+
+## Use Cases
+
+<AccordionGroup>
+  <Accordion title="Targeted Interaction Analysis">
+    Find specific interactions between known accounts to verify relationships or connections.
+  </Accordion>
+  
+  <Accordion title="Relationship Verification">
+    Verify if specific accounts have interacted with a profile by checking for likes and comments.
+  </Accordion>
+  
+  <Accordion title="Engagement Tracking">
+    Track engagement from specific accounts or groups of accounts on a profile's posts.
+  </Accordion>
+  
+  <Accordion title="Content Discovery">
+    Find posts where specific accounts have interacted, useful for content analysis and discovery.
+  </Accordion>
+</AccordionGroup>
+
+## Notes
+
+- This endpoint processes requests asynchronously and returns job IDs
+- Poll the [Jobs endpoint](/api-reference/jobs) to check status and retrieve results
+- Results depend on the privacy settings of the Facebook profile
+- Private posts may not be accessible, which can affect results
+- The `postLimit` parameter controls how many posts are analyzed (max 20)
+- Account name matching is case-insensitive
+- You can provide both `fbAccountIds` and `fbAccountNames` - interactions from either will be included
+- Each interaction includes the `postUrl` for easy reference
+- If no matching interactions are found, the `interactions` array will be empty
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Using Account IDs vs Names">
+    Use `fbAccountIds` when you have Facebook IDs for more reliable matching. Use `fbAccountNames` when you only have names, but be aware that name matching may be less precise.
+  </Accordion>
+  
+  <Accordion title="Combining Filters">
+    You can provide both `fbAccountIds` and `fbAccountNames` to find interactions from multiple accounts using different identifiers.
+  </Accordion>
+  
+  <Accordion title="Post Limit Selection">
+    Use a reasonable `postLimit` (5-10) for faster processing. Higher limits take longer but may find more interactions.
+  </Accordion>
+  
+  <Accordion title="Handling Empty Results">
+    An empty `interactions` array means no matching interactions were found from the specified accounts.
+  </Accordion>
+</AccordionGroup>
+
+## Related Endpoints
+
+- [Jobs](/api-reference/jobs) - Check job status and retrieve results
+- [Profile Interactions](/api-reference/profile-interactions) - Get all interactions without filtering
+- [Profile Search](/api-reference/profile-search) - Find profiles before analyzing interactions
+

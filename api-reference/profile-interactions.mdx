@@ -1,0 +1,353 @@
+---
+title: "Profile Interactions"
+description: "Collect recent interactions (likes/comments) on a Facebook profile"
+api: "POST /api/profile-interactions"
+---
+
+Collect recent interactions (likes and comments) on a Facebook profile. This endpoint retrieves posts from the target profile and identifies all users who have liked or commented on those posts, useful for understanding engagement and social connections.
+
+<Endpoint method="POST" url="/api/profile-interactions" />
+
+<ParamField body="profileId" type="string">
+  Facebook profile ID (numeric or username). Either `profileId` or `profileUrl` is required, but not both.
+</ParamField>
+
+<ParamField body="profileUrl" type="string">
+  Full Facebook profile URL (e.g., "https://facebook.com/john.doe"). Either `profileId` or `profileUrl` is required, but not both.
+</ParamField>
+
+<ParamField body="postLimit" type="number">
+  Maximum number of posts to analyze for interactions. Must be between 1 and 20. Defaults to 5 if not specified.
+</ParamField>
+
+## Request Example
+
+<CodeGroup>
+
+```bash cURL
+curl -X POST https://api.proofly.joinplank.com/api/profile-interactions \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: sk_your_api_key_here" \
+  -d '{
+    "profileUrl": "https://facebook.com/john.doe",
+    "postLimit": 10
+  }'
+```
+
+```javascript JavaScript
+const response = await fetch('https://api.proofly.joinplank.com/api/profile-interactions', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    'X-API-Key': 'sk_your_api_key_here'
+  },
+  body: JSON.stringify({
+    profileUrl: 'https://facebook.com/john.doe',
+    postLimit: 10
+  })
+});
+
+const { jobId } = await response.json();
+```
+
+```typescript TypeScript
+interface ProfileInteractionsRequest {
+  profileId?: string;
+  profileUrl?: string;
+  postLimit?: number;
+}
+
+const response = await fetch('https://api.proofly.joinplank.com/api/profile-interactions', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    'X-API-Key': 'sk_your_api_key_here'
+  },
+  body: JSON.stringify({
+    profileUrl: 'https://facebook.com/john.doe',
+    postLimit: 10
+  } as ProfileInteractionsRequest)
+});
+
+const { jobId } = await response.json() as { jobId: string };
+```
+
+</CodeGroup>
+
+## Response
+
+This endpoint processes requests asynchronously and returns a job ID. Poll the [Jobs endpoint](/api-reference/jobs) to check status and retrieve results.
+
+### 202 Accepted
+
+```json
+{
+  "jobId": "550e8400-e29b-41d4-a716-446655440000"
+}
+```
+
+### Job Result (when completed)
+
+When the job status is `completed`, the `resultData` contains:
+
+```json
+{
+  "profile": {
+    "id": "123456789",
+    "url": "https://facebook.com/john.doe",
+    "name": "John Doe",
+    "pictureUrl": "https://facebook.com/john.doe/picture.jpg"
+  },
+  "posts": [
+    {
+      "postId": "post123",
+      "postUrl": "https://facebook.com/john.doe/posts/post123",
+      "createdAt": "2024-01-15T10:30:00Z",
+      "likeCount": 50,
+      "commentCount": 12,
+      "topLikers": ["user1", "user2", "user3"],
+      "topCommenters": ["user4", "user5"]
+    }
+  ],
+  "profilePhoto": {
+    "postId": "photo123",
+    "postUrl": "https://facebook.com/john.doe/photos/photo123",
+    "likeCount": 100,
+    "commentCount": 25
+  },
+  "actors": [
+    {
+      "actorId": "987654321",
+      "profileUrl": "https://facebook.com/jane.smith",
+      "name": "Jane Smith",
+      "interactionTypes": ["like", "comment"],
+      "likedPostIds": ["post123", "post456"],
+      "commentedPostIds": ["post123"]
+    }
+  ],
+  "comments": [
+    {
+      "actorId": "987654321",
+      "name": "Jane Smith",
+      "comment": "Great post!"
+    }
+  ],
+  "likes": [
+    {
+      "actorId": "555666777",
+      "name": "Bob Johnson"
+    }
+  ]
+}
+```
+
+## Response Fields
+
+### Profile
+
+<ParamField response="profile" type="object">
+  Metadata about the target profile.
+</ParamField>
+
+<ParamField response="profile.id" type="string">
+  Facebook profile ID.
+</ParamField>
+
+<ParamField response="profile.url" type="string">
+  URL to the Facebook profile.
+</ParamField>
+
+<ParamField response="profile.name" type="string">
+  Name of the profile, if available.
+</ParamField>
+
+<ParamField response="profile.pictureUrl" type="string">
+  URL to the profile picture, if available.
+</ParamField>
+
+### Posts
+
+<ParamField response="posts" type="array">
+  Array of posts from the profile with interaction data.
+</ParamField>
+
+<ParamField response="posts[].postId" type="string">
+  Unique identifier for the post.
+</ParamField>
+
+<ParamField response="posts[].postUrl" type="string">
+  URL to the post.
+</ParamField>
+
+<ParamField response="posts[].createdAt" type="string">
+  ISO timestamp when the post was created.
+</ParamField>
+
+<ParamField response="posts[].likeCount" type="number">
+  Total number of likes on the post.
+</ParamField>
+
+<ParamField response="posts[].commentCount" type="number">
+  Total number of comments on the post.
+</ParamField>
+
+<ParamField response="posts[].topLikers" type="array">
+  Array of actor IDs or profile URLs of top likers.
+</ParamField>
+
+<ParamField response="posts[].topCommenters" type="array">
+  Array of actor IDs or profile URLs of top commenters.
+</ParamField>
+
+### Profile Photo
+
+<ParamField response="profilePhoto" type="object">
+  Interaction data for the profile photo, if available.
+</ParamField>
+
+### Actors
+
+<ParamField response="actors" type="array">
+  Array of users who interacted with the profile's posts.
+</ParamField>
+
+<ParamField response="actors[].actorId" type="string">
+  Facebook ID of the actor.
+</ParamField>
+
+<ParamField response="actors[].profileUrl" type="string">
+  URL to the actor's profile.
+</ParamField>
+
+<ParamField response="actors[].name" type="string">
+  Name of the actor, if available.
+</ParamField>
+
+<ParamField response="actors[].interactionTypes" type="array">
+  Types of interactions: `"like"` and/or `"comment"`.
+</ParamField>
+
+<ParamField response="actors[].likedPostIds" type="array">
+  Array of post IDs that this actor liked.
+</ParamField>
+
+<ParamField response="actors[].commentedPostIds" type="array">
+  Array of post IDs that this actor commented on.
+</ParamField>
+
+### Comments and Likes
+
+<ParamField response="comments" type="array">
+  Array of comment details with actor information and comment text.
+</ParamField>
+
+<ParamField response="likes" type="array">
+  Array of like details with actor information.
+</ParamField>
+
+## Authentication
+
+This endpoint requires API key authentication via the `X-API-Key` header.
+
+## Error Responses
+
+### 400 Bad Request
+
+Invalid request parameters.
+
+```json
+{
+  "error": "Bad Request",
+  "message": "Provide either profileId or profileUrl, but not both"
+}
+```
+
+### 401 Unauthorized
+
+Missing or invalid API key.
+
+```json
+{
+  "error": "Unauthorized",
+  "message": "Invalid API key"
+}
+```
+
+### 500 Internal Server Error
+
+Server error occurred.
+
+```json
+{
+  "error": "Internal Server Error",
+  "message": "An unexpected error occurred"
+}
+```
+
+### 502 Bad Gateway
+
+Service temporarily unavailable.
+
+```json
+{
+  "error": "Bad Gateway",
+  "message": "Service temporarily unavailable"
+}
+```
+
+## Use Cases
+
+<AccordionGroup>
+  <Accordion title="Engagement Analysis">
+    Analyze engagement patterns on a profile by examining likes and comments across multiple posts.
+  </Accordion>
+  
+  <Accordion title="Social Connection Discovery">
+    Discover users who frequently interact with a profile to understand their social network.
+  </Accordion>
+  
+  <Accordion title="Influence Measurement">
+    Measure profile influence by analyzing interaction counts and identifying top engagers.
+  </Accordion>
+  
+  <Accordion title="Content Analysis">
+    Understand which posts receive the most engagement and identify patterns in user interactions.
+  </Accordion>
+</AccordionGroup>
+
+## Notes
+
+- This endpoint processes requests asynchronously and returns job IDs
+- Poll the [Jobs endpoint](/api-reference/jobs) to check status and retrieve results
+- Results depend on the privacy settings of the Facebook profile
+- Private posts may not be accessible, which can affect results
+- The `postLimit` parameter controls how many posts are analyzed (max 20)
+- Profile photo interactions are tracked separately in the `profilePhoto` field
+- Actor information may be limited if profiles are private
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Post Limit Selection">
+    Use a reasonable `postLimit` (5-10) for faster processing. Higher limits take longer but provide more comprehensive data.
+  </Accordion>
+  
+  <Accordion title="Profile URL vs ID">
+    Use `profileUrl` when you have the full URL, as it's more reliable. Use `profileId` when you only have the ID.
+  </Accordion>
+  
+  <Accordion title="Handling Large Results">
+    Results can be large with many actors and interactions. Plan your data processing accordingly.
+  </Accordion>
+  
+  <Accordion title="Privacy Considerations">
+    Be aware that private profiles may return limited or no interaction data depending on privacy settings.
+  </Accordion>
+</AccordionGroup>
+
+## Related Endpoints
+
+- [Jobs](/api-reference/jobs) - Check job status and retrieve results
+- [Filtered Profile Interactions](/api-reference/filtered-profile-interactions) - Get interactions filtered by specific accounts
+- [Profile Search](/api-reference/profile-search) - Find profiles before analyzing interactions
+

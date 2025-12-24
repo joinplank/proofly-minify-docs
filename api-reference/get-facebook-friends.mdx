@@ -1,0 +1,208 @@
+---
+title: "Get Facebook Friends"
+description: "Fetch all Facebook friends for a target profile"
+api: "POST /api/get-facebook-friends"
+---
+
+Fetch all Facebook friends and connections for a provided target profile. This endpoint retrieves the complete friend list for a Facebook profile, including relationship information.
+
+<Endpoint method="POST" url="/api/get-facebook-friends" />
+
+<ParamField body="targetFacebookId" type="string" required>
+  The Facebook profile ID of the target user whose friends you want to retrieve.
+</ParamField>
+
+## Request Example
+
+<CodeGroup>
+
+```bash cURL
+curl -X POST https://api.proofly.joinplank.com/api/get-facebook-friends \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: sk_your_api_key_here" \
+  -d '{
+    "targetFacebookId": "123456789"
+  }'
+```
+
+```javascript JavaScript
+const response = await fetch('https://api.proofly.joinplank.com/api/get-facebook-friends', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    'X-API-Key': 'sk_your_api_key_here'
+  },
+  body: JSON.stringify({
+    targetFacebookId: '123456789'
+  })
+});
+
+const { jobId } = await response.json();
+```
+
+```typescript TypeScript
+interface GetFacebookFriendsRequest {
+  targetFacebookId: string;
+}
+
+const response = await fetch('https://api.proofly.joinplank.com/api/get-facebook-friends', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    'X-API-Key': 'sk_your_api_key_here'
+  },
+  body: JSON.stringify({
+    targetFacebookId: '123456789'
+  } as GetFacebookFriendsRequest)
+});
+
+const { jobId } = await response.json() as { jobId: string };
+```
+
+</CodeGroup>
+
+## Response
+
+This endpoint processes requests asynchronously and returns a job ID. Poll the [Jobs endpoint](/api-reference/jobs) to check status and retrieve results.
+
+### 202 Accepted
+
+```json
+{
+  "jobId": "550e8400-e29b-41d4-a716-446655440000"
+}
+```
+
+### Job Result (when completed)
+
+When the job status is `completed`, the `resultData` contains:
+
+```json
+{
+  "connections": [
+    {
+      "id": "987654321",
+      "url": "https://facebook.com/profile.php?id=987654321",
+      "relationship": "Friend",
+      "name": "John Doe"
+    },
+    {
+      "id": "111222333",
+      "url": "https://facebook.com/profile.php?id=111222333",
+      "relationship": "Friend",
+      "name": "Jane Smith"
+    }
+  ]
+}
+```
+
+The `connections` array contains all friends and connections for the target profile, including relationship information.
+
+## Response Fields
+
+<ParamField response="connections" type="array">
+  Array of connections for the target user with relationship information.
+</ParamField>
+
+<ParamField response="connections[].id" type="string">
+  Facebook ID of the connection.
+</ParamField>
+
+<ParamField response="connections[].url" type="string">
+  Profile URL of the connection.
+</ParamField>
+
+<ParamField response="connections[].relationship" type="string">
+  Type of relationship between the target user and this connection (e.g., "Friend").
+</ParamField>
+
+<ParamField response="connections[].name" type="string">
+  Profile name of the connection, if available. May be null or omitted if not available.
+</ParamField>
+
+## Authentication
+
+This endpoint requires API key authentication via the `X-API-Key` header.
+
+## Error Responses
+
+### 400 Bad Request
+
+Invalid request parameters.
+
+```json
+{
+  "error": "Bad Request",
+  "message": "targetFacebookId is required"
+}
+```
+
+### 401 Unauthorized
+
+Missing or invalid API key.
+
+```json
+{
+  "error": "Unauthorized",
+  "message": "Invalid API key"
+}
+```
+
+### 500 Internal Server Error
+
+Server error occurred.
+
+```json
+{
+  "error": "Internal Server Error",
+  "message": "An unexpected error occurred"
+}
+```
+
+### 502 Bad Gateway
+
+Service temporarily unavailable.
+
+```json
+{
+  "error": "Bad Gateway",
+  "message": "Service temporarily unavailable"
+}
+```
+
+## Use Cases
+
+<AccordionGroup>
+  <Accordion title="Social Graph Analysis">
+    Retrieve the complete friend list of a profile to analyze social connections and network structure.
+  </Accordion>
+  
+  <Accordion title="Profile Verification">
+    Verify a user's claimed identity by examining their social connections and friend network.
+  </Accordion>
+  
+  <Accordion title="Connection Discovery">
+    Discover all connections and relationships for a target profile for research or analysis purposes.
+  </Accordion>
+  
+  <Accordion title="Network Mapping">
+    Map out the social network of a profile by retrieving all friends and their relationship information.
+  </Accordion>
+</AccordionGroup>
+
+## Notes
+
+- This endpoint processes requests asynchronously and returns job IDs
+- Poll the [Jobs endpoint](/api-reference/jobs) to check status and retrieve results
+- Results depend on the privacy settings of the target Facebook profile
+- Private friend lists may not be fully accessible, which can affect results
+- Only public friendships are detectable; private friendships may not appear in results
+- The `name` field may be null or omitted if the profile name is not available
+
+## Related Endpoints
+
+- [Jobs](/api-reference/jobs) - Check job status and retrieve results
+- [Check Facebook Friends](/api-reference/check-facebook-friends) - Verify if specific profiles are friends
+- [Find Mutual Friends](/api-reference/find-mutual-friends) - Discover mutual connections between multiple profiles
+- [Profile Search](/api-reference/profile-search) - Find Facebook profiles before retrieving friends
+
